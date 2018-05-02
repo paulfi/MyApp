@@ -1,20 +1,47 @@
 //build a chart with c3
 //requires d3 and c3
 
-//var dUrl = "./daily?station=08NH005&format=json";
 var hUrl = "./historic?station=08NH005&format=json"
-var hData = [];
-var dData = [];
 
-function buildHistoricUrl(station){
+var hData = { 
+    data: [],
+    get: function(){return this.data;},
+    set: function(y){
+        this.data = y;
+        drawHistoricGraph();
+    }
+ };
+
+//build url by station
+function buildHistoricUrl(station, format='json'){
     var router = "./historic"
     var url = router + "?station=" + station + "&format=" + format;
     return url
 }
 
+//Build JSON from response
+function loadHistoricJson(station){
+    var url = buildHistoricUrl(station);
+    var parseTime = d3.timeParse("%d-%m-%Y");
+    $.getJSON(url,function(d){
+        //add date from year month day
+        $.each(d, function(row, c){
+            var myDate = c["DAY"] + "-" + c["MONTH"] + "-" + "2018"
+            //d["Date"] = d3.isoParse(d["Date"]);
+            var myFormat = d3.timeFormat("%Y-%m-%d");
+            c["Date"] = parseTime(myDate);
+            delete c.DAY;
+            delete c.MONTH;
+            delete c.STATION_NUMBER;
+            //d["Date"] = myFormat(parseTime(myDate));
+            return c;
+        });
+        hData.set(json2array(d));
+    });
+}
+
 function json2array(jsonObj){
-    //console.log("json to array");
-    //build data array
+    //build data array from json --- fields are in first array
     var darray = [];
     $.each(jsonObj, function(fprop,val){
       var fieldList = [];
@@ -35,31 +62,15 @@ function json2array(jsonObj){
     return darray;
   }
 
-function drawHistoricGraph(url){
+function drawHistoricGraph(){
     var parseTime = d3.timeParse("%d-%m-%Y");
-    $.getJSON(url,function(d){
-        //add date from year month day
-        $.each(d, function(row, c){
-            var myDate = c["DAY"] + "-" + c["MONTH"] + "-" + "2018"
-            //d["Date"] = d3.isoParse(d["Date"]);
-            var myFormat = d3.timeFormat("%Y-%m-%d");
-            c["Date"] = parseTime(myDate);
-            delete c.DAY;
-            delete c.MONTH;
-            delete c.STATION_NUMBER;
-            //d["Date"] = myFormat(parseTime(myDate));
-            return c;
-        });
-        window.hData = json2array(d);
-        drawGraph(window.hData);
-    });
-
-    function drawGraph(data){
+   
+    function drawGraph(){
         var humanFormat = d3.timeFormat("%B, %e");
         window.chart = c3.generate({
                 bindto: '#myGraph',
                 data:{
-                    rows: data,
+                    rows: hData.get(),
                     x: 'Date',
                     type: 'area-spline',
                     names: {

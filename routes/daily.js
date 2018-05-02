@@ -7,7 +7,7 @@ var router = express.Router();
 /* GET station info */
 // station, format, stats_type
 router.get('/', function(req, res, next) {
-  //http://localhost:3000/station?station=08NH005&type=json
+  //http://localhost:3000/daily?station=08NH005&format=json
   var station = req.query.station
   var type = req.query.format
   var resp

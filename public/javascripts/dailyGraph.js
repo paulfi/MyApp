@@ -1,17 +1,24 @@
 var rtUrl = "./daily?station=08NH005&format=json";
-var rtData = {};
+var rtData = { 
+    data: [],
+    get: function(){return this.data;},
+    set: function(y){
+        this.data = y;
+        drawDailyGraph();
+    }
+ };
 
 function buildDailyUrl(station, format='json'){
     var router = "./daily"
     var url = router + "?station=" + station + "&format=" + format;
     return url
 }
-function drawDailyGraph(dJSON){
-    var parseTime = d3.timeParse("%d-%m-%Y");
-    var humanFormat = d3.timeFormat("%B, %e, - %H:%M");
-    d3.json(rtUrl, function(data) {
+function loadDailyJson(station){
+    //get from url, parse dates, fix fields
+    var url = buildDailyUrl(station);
+    d3.json(url,function(data){
+        //call back function loads data to window.rtData
         data.forEach(function(d){
-            //var myDate = d["DAY"] + "-" + d["MONTH"] + "-" + "2018"
             d["Date"] = d3.isoParse(d["Date"]);
             var myFormat = d3.timeFormat("%m-%d %H");
             for (var param in d){
@@ -23,11 +30,13 @@ function drawDailyGraph(dJSON){
                     delete d[param]
                 }
             }
-            //d["Date"] = parseTime(myDate);
+            // truncate time to Hour
+            // is this needed?
             d["Date"] =d3.timeFormat("%Y-%m-%d %H")(d.Date);
             
             return d;
         })
+        // rollup to get average discharge per hour
         var result = d3.nest()
             .key(function(d) {
                 return d.Date;
@@ -35,48 +44,58 @@ function drawDailyGraph(dJSON){
             .rollup(function(v) { return d3.mean(v, function(d) { return d.Discharge; }); })
             .entries(data);
         result.forEach(function(d){
-            d.key = d3.timeParse("%Y-%m-%d %H")(d.key);
+            //fix result key value names after nest
+            d = {
+                Date: d3.timeParse("%Y-%m-%d %H")(d.key),
+                Discharge: d.value
+            }; 
+            return d;
         })
-        window.rtData = result;
-        setTimeout(function(){
-            c3.generate({
-                bindto: '#dailyGraph',
-                data:{
-                    json: rtData,
-                    keys: {
-                        x: 'key',
-                        value: ['value']
-                    },
-                    type: 'spline',
-                    color: '#011f4b',
-                    names: {
-                        value: 'Discharge(cms)',
-                    }
-                
+        //return result to app
+        window.rtData.set(result);
+    })
+}
+function drawDailyGraph(){
+    var parseTime = d3.timeParse("%d-%m-%Y");
+    var humanFormat = d3.timeFormat("%B, %e, - %H:%M");
+    setTimeout(function(){
+        c3.generate({
+            bindto: '#dailyGraph',
+            data:{
+                json: rtData.get(),
+                keys: {
+                    x: 'Date',
+                    value: ['Discharge']
                 },
-                point: {
-                    show: false
-                },
-                axis:{
-                    x:{
-                        type: 'timeseries',
-                        tick: {
-                            format: '%B %e',
-                            count: 30
-                    }
-                    }
-                },
-                tooltip: {
-                    format: {
-                        title: function (d) { return 'Flow for: ' + humanFormat(d); },
-                        value: function (value, ratio, id) {
-                            var format = id === 'data1' ? d3.format(',') : d3.format('.1f');
-                            return format(value) + ' m3/s';
-                        }
+                type: 'spline',
+                color: '#011f4b',
+                names: {
+                    value: 'Discharge(cms)',
+                }            
+            },
+            point: {
+                show: false
+            },
+            axis:{
+                x:{
+                    type: 'timeseries',
+                    tick: {
+                        format: '%B %e',
+                        count: 30
+                }
+                }
+            },
+            tooltip: {
+                format: {
+                    title: function (d) { return 'Flow for: ' + humanFormat(d); },
+                    value: function (value, ratio, id) {
+                        var format = id === 'data1' ? d3.format(',') : d3.format('.1f');
+                        return format(value) + ' m3/s';
                     }
                 }
-            });
-        },1000)
-    });
+            }
+        });
+    },1000)
+
 }
 
