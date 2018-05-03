@@ -1,4 +1,4 @@
-var rtUrl = "./daily?station=08NH005&format=json";
+//load,parse and graph hourly discharge data
 var rtData = { 
     data: [],
     get: function(){return this.data;},
@@ -45,10 +45,10 @@ function loadDailyJson(station){
             .entries(data);
         result.forEach(function(d){
             //fix result key value names after nest
-            d = {
-                Date: d3.timeParse("%Y-%m-%d %H")(d.key),
-                Discharge: d.value
-            }; 
+            d.Date = d3.timeParse("%Y-%m-%d %H")(d.key);
+            d.Discharge = d.value;
+            delete d.key;
+            delete d.value;
             return d;
         })
         //return result to app

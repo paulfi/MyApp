@@ -36,6 +36,7 @@ router.get('/', function(req, res, next) {
 
     // close the database connection
     db.close();
+    console.log('Database connection closed')
   }
   else{
     res.send('Invalid type: ' + type);

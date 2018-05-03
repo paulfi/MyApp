@@ -1,5 +1,4 @@
-//build a chart with c3
-//requires d3 and c3
+//load,parse and graph historic daily discharge data
 
 var hUrl = "./historic?station=08NH005&format=json"
 
@@ -63,73 +62,72 @@ function json2array(jsonObj){
   }
 
 function drawHistoricGraph(){
-    var parseTime = d3.timeParse("%d-%m-%Y");
-   
-    function drawGraph(){
-        var humanFormat = d3.timeFormat("%B, %e");
-        window.chart = c3.generate({
-                bindto: '#myGraph',
-                data:{
-                    rows: hData.get(),
-                    x: 'Date',
-                    type: 'area-spline',
-                    names: {
-                        min: 'Min',
-                        PCT25: '25th %ile',
-                        PCT50: 'Median',
-                        PCT75: '75th %ile',
-                        max: 'Max'
-                    },
-                    colors: {
-                        min: '#08519c',
-                        PCT25: '#3182bd',
-                        PCT50: '#6baed6',
-                        PCT75: '#9ecae1',
-                        max: '#969696'
-                    }
-                
+    var parseTime = d3.timeParse(("%Y-%m-%d %H"));
+    var humanFormat = d3.timeFormat("%B, %e");
+    //build chart
+    window.chart = c3.generate({
+            bindto: '#myGraph',
+            data:{
+                rows: hData.get(),
+                x: 'Date',
+                type: 'area-spline',
+                names: {
+                    min: 'Min',
+                    PCT25: '25th %ile',
+                    PCT50: 'Median',
+                    PCT75: '75th %ile',
+                    max: 'Max'
                 },
-                point: {
-                    show: false
-                },
-                axis:{
-                    x:{
-                        type: 'timeseries',
-                        tick: {
-                            count: 12,
-                            format: '%B',
-                            fit: true
-                    }
-                    }
-                },
-                grid: {
-                    x: {
-                        show: true
-                    },
-                    y: {
-                        show: true
-                    }
-                },
-                tooltip: {
-                    format: {
-                        title: function (d) { return 'Flow for: ' + humanFormat(d); },
-                        value: function (value, ratio, id) {
-                            var format = id === 'data1' ? d3.format(',') : d3.format('.1f');
-                            return format(value) + ' m3/s';
-                        }
-            //            value: d3.format(',') // apply this format to both y and y2
-                    }
+                colors: {
+                    min: '#08519c',
+                    PCT25: '#3182bd',
+                    PCT50: '#6baed6',
+                    PCT75: '#9ecae1',
+                    max: '#969696'
                 }
-                // ,
-                // subchart: {
-                //     show: true
-                // }
+            
+            },
+            point: {
+                show: false
+            },
+            axis:{
+                x:{
+                    type: 'timeseries',
+                    tick: {
+                        count: 12,
+                        format: '%B',
+                        fit: true
+                }
+                }
+            },
+            grid: {
+                x: {
+                    show: true
+                },
+                y: {
+                    show: true
+                }
+            },
+            tooltip: {
+                format: {
+                    title: function (d) { return 'Flow for: ' + humanFormat(d); },
+                    value: function (value, ratio, id) {
+                        var format = id === 'data1' ? d3.format(',') : d3.format('.1f');
+                        return format(value) + ' m3/s';
+                    }
+        //            value: d3.format(',') // apply this format to both y and y2
+                }
+            }
+            // ,
+            // subchart: {
+            //     show: true
+            // }
 
         });
         setTimeout(window.chart.load({
             rows: window.dData
         }),1000);
-    }
+    
 
     
 }

@@ -16,3 +16,8 @@ html, body, #viewDiv {
   height: 450px;
   width: 100%;
 }
+#map {
+  height: 400px;
+  width: 100%;
+  position: absolute;
+}
